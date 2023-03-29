@@ -15,7 +15,8 @@ app = FastAPI(
 
 # Handles cors
 origins = [
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "https://agribuddy.netlify.app"
 ]
 
 app.add_middleware(
