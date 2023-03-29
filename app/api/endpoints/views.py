@@ -4,12 +4,54 @@ from config.settings import app
 from datetime import datetime, timedelta
 from machine_learning.predict import Predict
 from machine_learning.weather_api import openmeteo_datasets
+from typing import List
+
+import databases
+import sqlalchemy
+from sqlalchemy import and_
+
+
 
 router = APIRouter(
     prefix="/api/v1",
     tags=["API Endpoints"],
 )
 
+# SQLAlchemy specific code, as with any other app
+DATABASE_URL = "postgresql://postgres:0fDieqXPehjgL75iZRXe@containers-us-west-188.railway.app:7987/railway"
+# DATABASE_URL = "postgresql://user:password@postgresserver/db"
+
+database = databases.Database(DATABASE_URL)
+
+metadata = sqlalchemy.MetaData()
+
+predictions = sqlalchemy.Table(
+    "predictions",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("title", sqlalchemy.String),
+    sqlalchemy.Column("start", sqlalchemy.Date),
+    sqlalchemy.Column("end", sqlalchemy.Date),
+    sqlalchemy.Column("temperature", sqlalchemy.String),
+    sqlalchemy.Column("out_hum", sqlalchemy.String),
+    sqlalchemy.Column("dew_pt", sqlalchemy.String),
+    sqlalchemy.Column("wind_speed", sqlalchemy.String),
+)
+
+
+engine = sqlalchemy.create_engine(
+    DATABASE_URL, connect_args={}
+)
+metadata.create_all(engine)
+
+@router.on_event("startup")
+async def startup():
+    await database.connect()
+
+
+@router.on_event("shutdown")
+async def shutdown():
+    await database.disconnect()
 
 @router.get("/recommend-activity/train={train}")
 async def recommend_activity(train: bool):
@@ -24,7 +66,7 @@ async def recommend_activity(train: bool):
     res = []
     
     for idx, x in enumerate(forecast_5_days_ago[-5:]):
-        response = {}
+        
         result = predict.predict_activiy(params=np.array([x]))
         
         # get the date 5 days from the current date
@@ -33,15 +75,39 @@ async def recommend_activity(train: bool):
         # extract only the date portion
         five_days_from_now_date = five_days_from_now.date()
         
-        # print the result
-        response['title'] = result['title']
-        response['start'] = five_days_from_now_date
-        response['end'] = five_days_from_now_date
+        filterQuery = predictions.select().where(
+            and_(
+                predictions.c.title == result['title'],
+                predictions.c.start == five_days_from_now_date,
+                predictions.c.end == five_days_from_now_date,
+                predictions.c.temperature == str(round(result['temperature'])),
+                predictions.c.out_hum == str(round(result['humidity'])),
+                predictions.c.dew_pt == str(round(result['dew_pt'])),
+                predictions.c.wind_speed == str(round(result['wind_speed']))
+            )
+        )
+        if not await database.fetch_all(filterQuery):
+            # print the result
+            query = predictions.insert().values(
+                title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                )
+            await database.execute(query)
+    
+
+    selectQuery = predictions.select()
+    fetchAll  = await database.fetch_all(selectQuery)
+
+    for item in fetchAll:
+        response = {}
+        response['title'] = item.title
+        response['start'] = item.start
+        response['end'] = item.end
         response['allDay'] = True
-        response['temperature'] = round(result['temperature'])
-        response['humidity'] = round(result['humidity'])
-        response['dew_pt'] = round(result['dew_pt'])
-        response['wind_speed'] = round(result['wind_speed'])
+        response['temperature'] = item.temperature
+        response['humidity'] = item.out_hum
+        response['dew_pt'] = item.dew_pt
+        response['wind_speed'] = item.wind_speed
         res.append(response)
     
     return res

@@ -35,3 +35,6 @@ urllib3
 uvicorn
 watchfiles
 websockets
+databases
+asyncpg
+psycopg2
