@@ -75,23 +75,23 @@ async def recommend_activity(train: bool):
         # extract only the date portion
         five_days_from_now_date = five_days_from_now.date()
         
+        # check if prediction already exists in the database
         filterQuery = predictions.select().where(
-            and_(
-                predictions.c.title == result['title'],
-                predictions.c.start == five_days_from_now_date,
-                predictions.c.end == five_days_from_now_date,
-                predictions.c.temperature == str(round(result['temperature'])),
-                predictions.c.out_hum == str(round(result['humidity'])),
-                predictions.c.dew_pt == str(round(result['dew_pt'])),
-                predictions.c.wind_speed == str(round(result['wind_speed']))
-            )
+            predictions.c.title == result['title'],
+            predictions.c.start == five_days_from_now_date,
+            predictions.c.end == five_days_from_now_date,
         )
         if not await database.fetch_all(filterQuery):
-            # print the result
+            # insert the prediction into the database
             query = predictions.insert().values(
-                title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
-                temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
-                )
+                title=result['title'],
+                start=five_days_from_now_date,
+                end=five_days_from_now_date,
+                temperature=round(result['temperature']),
+                out_hum=round(result['humidity']),
+                dew_pt=round(result['dew_pt']),
+                wind_speed=round(result['wind_speed'])
+            )
             await database.execute(query)
     
 
