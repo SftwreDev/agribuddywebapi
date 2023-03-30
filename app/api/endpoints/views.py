@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 # SQLAlchemy specific code, as with any other app
-DATABASE_URL = "postgresql://postgres:0fDieqXPehjgL75iZRXe@containers-us-west-188.railway.app:7987/railway"
+DATABASE_URL = "postgresql://postgres:iWjHNRgEbf3vybYX0dB9@containers-us-west-26.railway.app:7837/railway"
 # DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 database = databases.Database(DATABASE_URL)

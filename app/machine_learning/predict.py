@@ -23,7 +23,7 @@ class Predict:
                 result.append(predict[0])
             else:
                 print("<=================== Start weather forecast training ===================>")
-                weather_forecast_regression = regression_model.weather_forecast_regression()
+                weather_forecast_regression = regression_model.weather_forecast_linear_regression()
                 model = regression_model.load_trained_model(name=model_name)
                 predict = model.predict(params)
                 result.append(predict[0])
@@ -48,4 +48,4 @@ class Predict:
             model = regression_model.load_trained_model(name="farming_datasets")
             weather_data = self.predict_forecast(params)
             predict_activity = model.predict([weather_data])
-            return activity[predict_activity[0]]
+            return {"title" : activity[predict_activity[0]], "temperature" : weather_data[0], "humidity" : weather_data[1], "dew_pt" : weather_data[2], "wind_speed" : weather_data[3]}
