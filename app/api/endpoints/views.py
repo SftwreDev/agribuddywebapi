@@ -77,9 +77,9 @@ async def recommend_activity(train: bool):
         
         # check if prediction already exists in the database
         filterQuery = predictions.select().where(
-            predictions.c.title == result['title'],
-            predictions.c.start == five_days_from_now_date,
-            predictions.c.end == five_days_from_now_date,
+            (predictions.c.title == result['title']) &
+            (predictions.c.start == five_days_from_now_date) &
+            (predictions.c.end == five_days_from_now_date)
         )
         if not await database.fetch_all(filterQuery):
             # insert the prediction into the database
