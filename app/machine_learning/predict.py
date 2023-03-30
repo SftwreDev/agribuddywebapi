@@ -4,11 +4,14 @@ from machine_learning.regression import RegressionModel
 
 class Predict:
     
-    def __init__(self, train: bool):
+    def __init__(self, train: bool, link: str, lat: str, lng: str):
         self.train = train
+        self.link = link
+        self.lat = lat
+        self.lng = lng
         
     def init_model(self):
-        return RegressionModel()
+        return RegressionModel(self.link, self.lat, self.lng)
     
     def predict_forecast(self, params):
         regression_model = self.init_model()
@@ -16,15 +19,16 @@ class Predict:
         result = []
         for target in features:     
             model_name = target.lower().replace(" ", "_").replace(".", "")
-            if not self.train:
+            if self.train:
                 print("<=================== Loading weather forecast trained model ===================>")
-                model = regression_model.load_trained_model(name=model_name)
+                model = regression_model.load_trained_model(name=f"{model_name}_polynomial")
+                print(params)
                 predict = model.predict(params)
                 result.append(predict[0])
             else:
                 print("<=================== Start weather forecast training ===================>")
-                weather_forecast_regression = regression_model.weather_forecast_linear_regression()
-                model = regression_model.load_trained_model(name=model_name)
+                regression_model.weather_forecast_polynomial_regression()
+                model = regression_model.load_trained_model(name=f"{model_name}_polynomial")
                 predict = model.predict(params)
                 result.append(predict[0])
         return result
@@ -36,7 +40,7 @@ class Predict:
          12: 'Drying the Beans', 13: 'Milling the Beans', 14: 'Exporting the Beans'}
             
         regression_model = self.init_model()
-        if not self.train:
+        if self.train:
             print("<=================== Loading farming activity trained model ===================>")
             model = regression_model.load_trained_model(name="farming_datasets")
             weather_data = self.predict_forecast(params)

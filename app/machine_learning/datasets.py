@@ -9,8 +9,13 @@ from datetime import datetime
 
 class Datasets:
     
+    def __init__(self, link: str, lat: str, lng:str):
+        self.link = link
+        self.lat = lat
+        self.lng = lng
+
     def barako_datasets(self):
-        url = 'https://mrtourguide.com.ph/barako/file.csv'
+        url = self.link
         url_response = urllib.request.urlopen(url)
         csv_lines = [l.decode('utf-8') for l in url_response.readlines()]
         # Create a Pandas DataFrame from the CSV data
@@ -33,7 +38,7 @@ class Datasets:
         date_today = dt.date.today()
         five_days_ago = date_today - dt.timedelta(days=5)
         print(five_days_ago)
-        url = f"https://archive-api.open-meteo.com/v1/archive?latitude=13.85&longitude=121.20&start_date=2022-07-07&end_date={five_days_ago}&hourly=temperature_2m,relativehumidity_2m,dewpoint_2m,windspeed_10m&models=era5&daily=windspeed_10m_max&timezone=Asia%2FSingapore"
+        url = f"https://archive-api.open-meteo.com/v1/archive?latitude={self.lat}&longitude={self.lng}&start_date=2022-07-01&end_date={five_days_ago}&hourly=temperature_2m,relativehumidity_2m,dewpoint_2m,windspeed_10m&models=era5&daily=windspeed_10m_max&timezone=Asia%2FSingapore"
         print(url)
         response = requests.get(url)
         json_data = response.json()

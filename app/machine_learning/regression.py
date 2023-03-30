@@ -10,9 +10,14 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from machine_learning.datasets import Datasets
 
 class RegressionModel:
+
+    def __init__(self, link: str, lat: str, lng: str):
+        self.link = link
+        self.lat = lat
+        self.lng = lng
     
     def get_dataset(self):
-        return Datasets()
+        return Datasets(self.link, self.lat, self.lng)
     
     def rmse_formula(self, predictions, targets):
         return np.sqrt(((predictions - targets) ** 2).mean())
@@ -55,7 +60,7 @@ class RegressionModel:
             x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
             # Apply polynomial features to input variables
-            poly_features = PolynomialFeatures(degree=2)
+            poly_features = PolynomialFeatures(degree=1, include_bias=False)
             x_train_poly = poly_features.fit_transform(x_train)
             x_test_poly = poly_features.transform(x_test)
 
@@ -73,14 +78,6 @@ class RegressionModel:
             model_name = target.lower().replace(" ", "_").replace(".", "")
             self.save_trained_model(name=f"{model_name}_polynomial", model=clf)
             models[target] = clf
-
-            # Plot the predicted values against the actual values
-            plt.scatter(y_test, prediction)
-            plt.plot(y_test, y_test, color='red')
-            plt.xlabel('Actual')
-            plt.ylabel('Predicted')
-            plt.title(f'{target} Polynomial Regression')
-            plt.show()
 
         return models
     

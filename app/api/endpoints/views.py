@@ -1,6 +1,8 @@
+import googlemaps
 import numpy as np
 from fastapi import APIRouter
 from config.settings import app
+from pydantic import BaseModel
 from datetime import datetime, timedelta
 from machine_learning.predict import Predict
 from machine_learning.weather_api import openmeteo_datasets
@@ -18,7 +20,7 @@ router = APIRouter(
 )
 
 # SQLAlchemy specific code, as with any other app
-DATABASE_URL = "postgresql://postgres:iWjHNRgEbf3vybYX0dB9@containers-us-west-26.railway.app:7837/railway"
+DATABASE_URL = "postgresql://postgres:U4XrpOkSjE6ydc3UsAy4@containers-us-west-181.railway.app:5792/railway"
 # DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 database = databases.Database(DATABASE_URL)
@@ -38,11 +40,33 @@ predictions = sqlalchemy.Table(
     sqlalchemy.Column("wind_speed", sqlalchemy.String),
 )
 
+locations = sqlalchemy.Table(
+    "locations",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("locations", sqlalchemy.String),
+    sqlalchemy.Column("link", sqlalchemy.String),
+    sqlalchemy.Column("lat", sqlalchemy.String),
+    sqlalchemy.Column("lng", sqlalchemy.String),
+    sqlalchemy.Column("is_trained", sqlalchemy.Boolean),
+)
 
 engine = sqlalchemy.create_engine(
     DATABASE_URL, connect_args={}
 )
 metadata.create_all(engine)
+
+class Locations(BaseModel):
+    locations: str
+    link: str 
+
+class LocationsResponse(BaseModel):
+    id: int
+    locations: str
+    link: str 
+
+class PredictInput(BaseModel):
+    link: str
 
 @router.on_event("startup")
 async def startup():
@@ -53,18 +77,54 @@ async def startup():
 async def shutdown():
     await database.disconnect()
 
-@router.get("/recommend-activity/train={train}")
-async def recommend_activity(train: bool):
-    past_forecast = openmeteo_datasets()
+@router.post("/locations/new")
+async def create_location(loc: Locations):
+        
+    API_KEY = "AIzaSyB0o7QPKXEvzQsPsVtgTICAWEqgYVzDog4"
+
+    # Create a client object with your API key
+    client = googlemaps.Client(key=API_KEY)
+
+    # Geocode an address
+    geocode_result = client.geocode(loc.locations)
+
+    # Get the latitude and longitude from the geocode result
+    lat = geocode_result[0]["geometry"]["location"]["lat"]
+    lng = geocode_result[0]["geometry"]["location"]["lng"]
+
+    filterQuery = locations.select().where(
+            and_(
+                locations.c.locations == loc.locations
+            )
+        )
+    if not await database.fetch_all(filterQuery):
+        
+        query = locations.insert().values(
+                    locations=loc.locations, link=loc.link, lat=str(lat), lng=str(lng), is_trained=False
+                    )
+        await database.execute(query)
+
+        return {"status" : 201, "message" : "New Locations Created"}
+    else:
+        return {"status" : 400, "message" : "Locations already exists"}
+
+@router.get("/locations", response_model=List[LocationsResponse])
+async def get_locations():
+    query = locations.select()
+    return await database.fetch_all(query)
+
+@router.get("/recommend-activity/train={train}/id={id}")
+async def recommend_activity(train: bool,id: int):
+    query = locations.select().where(locations.c.id==id)
+    link = await database.fetch_one(query)
+    predict = Predict(train=link.is_trained, link=link.link, lat=link.lat, lng=link.lng)
+    current_date = datetime.now()
+    res = []
+    past_forecast = openmeteo_datasets(lat=link.lat, lng=link.lng)
     forecast_5_days_ago = []
 
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
-
-    predict = Predict(train=train)
-    current_date = datetime.now()
-    res = []
-    
     for idx, x in enumerate(forecast_5_days_ago[-5:]):
         
         result = predict.predict_activiy(params=np.array([x]))
