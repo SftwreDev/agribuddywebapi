@@ -38,3 +38,4 @@ websockets
 databases
 asyncpg
 psycopg2
+googlemaps
