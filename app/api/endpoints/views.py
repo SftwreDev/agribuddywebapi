@@ -81,7 +81,7 @@ async def shutdown():
 @router.post("/locations/new")
 async def create_location(loc: Locations):
         
-    API_KEY = os.environ.get('SENDGRID_API_KEY')
+    API_KEY = os.environ.get('GOOGLEMAPS_API_KEY')
 
     # Create a client object with your API key
     client = googlemaps.Client(key=API_KEY)
