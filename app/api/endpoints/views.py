@@ -138,7 +138,6 @@ async def recommend_activity(train: bool,id: int):
         
         filterQuery = predictions.select().where(
             and_(
-                predictions.c.title == result['title'],
                 predictions.c.start == five_days_from_now_date,
                 predictions.c.end == five_days_from_now_date
             )
