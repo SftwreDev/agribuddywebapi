@@ -1,3 +1,4 @@
+import os
 import googlemaps
 import numpy as np
 from fastapi import APIRouter
@@ -80,7 +81,7 @@ async def shutdown():
 @router.post("/locations/new")
 async def create_location(loc: Locations):
         
-    API_KEY = "AIzaSyB0o7QPKXEvzQsPsVtgTICAWEqgYVzDog4"
+    API_KEY = os.environ.get('SENDGRID_API_KEY')
 
     # Create a client object with your API key
     client = googlemaps.Client(key=API_KEY)
