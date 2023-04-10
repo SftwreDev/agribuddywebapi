@@ -4,7 +4,7 @@ import numpy as np
 from fastapi import APIRouter
 from config.settings import app
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from machine_learning.predict import Predict
 from machine_learning.weather_api import openmeteo_datasets
 from typing import List
@@ -68,6 +68,9 @@ class LocationsResponse(BaseModel):
 
 class PredictInput(BaseModel):
     link: str
+
+class CustomDateprediction(BaseModel):
+    date: date
 
 @router.on_event("startup")
 async def startup():
@@ -135,6 +138,62 @@ async def recommend_activity(train: bool,id: int):
 
         # extract only the date portion
         five_days_from_now_date = five_days_from_now.date()
+        
+        filterQuery = predictions.select().where(
+            and_(
+                predictions.c.start == five_days_from_now_date,
+                predictions.c.end == five_days_from_now_date
+            )
+        )
+        if not await database.fetch_all(filterQuery):
+            # print the result
+            query = predictions.insert().values(
+                title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                )
+            await database.execute(query)
+    
+
+    selectQuery = predictions.select()
+    fetchAll  = await database.fetch_all(selectQuery)
+
+    for item in fetchAll:
+        response = {}
+        response['title'] = item.title
+        response['start'] = item.start
+        response['end'] = item.end
+        response['allDay'] = True
+        response['temperature'] = item.temperature
+        response['humidity'] = item.out_hum
+        response['dew_pt'] = item.dew_pt
+        response['wind_speed'] = item.wind_speed
+        res.append(response)
+    
+    return res
+
+
+
+@router.post("/recommend-activity/custom/train={train}/id={id}")
+async def custom_recommend_activity(train: bool,id: int, payload: CustomDateprediction):
+    query = locations.select().where(locations.c.id==id)
+    link = await database.fetch_one(query)
+    predict = Predict(train=link.is_trained, link=link.link, lat=link.lat, lng=link.lng)
+    current_date = payload.date
+    res = []
+    past_forecast = openmeteo_datasets(lat=link.lat, lng=link.lng)
+    forecast_5_days_ago = []
+
+    for forecast in past_forecast:
+        forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
+    for idx, x in enumerate(forecast_5_days_ago[-5:]):
+        
+        result = predict.predict_activiy(params=np.array([x]))
+        
+        # get the date 5 days from the current date
+        five_days_from_now = current_date + timedelta(days=idx + 1)
+
+        # extract only the date portion
+        five_days_from_now_date = five_days_from_now
         
         filterQuery = predictions.select().where(
             and_(
