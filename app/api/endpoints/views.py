@@ -226,3 +226,12 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
         res.append(response)
     
     return res
+
+
+@router.delete("/predictions/reset")
+async def delete_all_predictions():
+    try:
+        predictions.delete()
+        return {"success": True}
+    except Exception as e:
+        return {"error": str(e)}
