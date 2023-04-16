@@ -231,7 +231,8 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
 @router.delete("/predictions/reset")
 async def delete_all_predictions():
     try:
-        predictions.delete()
+        with engine.connect() as conn:
+            conn.execute(predictions.delete())
         return {"success": True}
     except Exception as e:
         return {"error": str(e)}
