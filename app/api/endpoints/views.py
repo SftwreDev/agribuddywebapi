@@ -21,7 +21,7 @@ router = APIRouter(
 )
 
 # SQLAlchemy specific code, as with any other app
-DATABASE_URL = "postgresql://postgres:U4XrpOkSjE6ydc3UsAy4@containers-us-west-181.railway.app:5792/railway"
+DATABASE_URL = "postgresql://postgres:ZbjA9YQJW7oHxwUj0ptk@containers-us-west-92.railway.app:7471/railway"
 # DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
 database = databases.Database(DATABASE_URL)
@@ -80,6 +80,52 @@ async def startup():
 @router.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
+
+async def check_predictions(title):
+    predict = predictions.select().where(and_(predictions.c.title==title))
+    if not await database.fetch_all(predict):
+        return False
+    else:
+        return True
+
+async def recommend_activity_checker(date):
+    delta = datetime.now() - date
+
+    if await check_predictions("Land Preparation"):
+        if delta < timedelta(days=60):
+            return "Land Preparation"
+        else:
+            if await check_predictions("Weeding"):
+                if delta < timedelta(days=3):
+                    return "Weeding"
+                else:
+                    if await check_predictions("Field Lay outing & Holing"):
+                        if delta < timedelta(days=3):
+                            return "Field Lay outing & Holing"
+                        else:
+                            if await check_predictions("Application of fertilizer"):
+                                if delta < timedelta(days=1):
+                                    return "Application of fertilizer"
+                                else:
+                                    if await check_predictions("Transplanting of Seedlings"):
+                                        if delta < timedelta(days=3):
+                                            return "Transplanting of Seedlings"
+                                        
+                                        else:
+                                            if delta < timedelta(days=730):
+                                                return True
+                                            else:
+                                                return "Harvesting"
+                                    else:
+                                        return "Transplanting of Seedlings"
+                            else:
+                                return "Application of fertilizer"
+                    else:
+                        return "Field Lay outing & Holing"
+            else:
+                return "Weeding"
+    else:
+        return "Land Preparation"
 
 @router.post("/locations/new")
 async def create_location(loc: Locations):
@@ -145,14 +191,14 @@ async def recommend_activity(train: bool,id: int):
                 predictions.c.end == five_days_from_now_date
             )
         )
+        activity = await recommend_activity_checker(five_days_from_now)
         if not await database.fetch_all(filterQuery):
             # print the result
             query = predictions.insert().values(
-                title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
                 temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
                 )
             await database.execute(query)
-    
 
     selectQuery = predictions.select()
     fetchAll  = await database.fetch_all(selectQuery)
@@ -201,10 +247,11 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
                 predictions.c.end == five_days_from_now_date
             )
         )
+        activity = await recommend_activity_checker(five_days_from_now)
         if not await database.fetch_all(filterQuery):
             # print the result
             query = predictions.insert().values(
-                title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
                 temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
                 )
             await database.execute(query)
