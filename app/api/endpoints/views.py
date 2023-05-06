@@ -88,31 +88,34 @@ async def check_predictions(title):
     else:
         return True
 
-async def recommend_activity_checker(date):
-    delta = datetime.now() - date
-
+async def recommend_activity_checker(is_custom: bool, custom_date):
+    today = datetime.today().date()
+    if is_custom:
+        custom_date = custom_date
+    else:
+        custom_date = custom_date.date()
     if await check_predictions("Land Preparation"):
-        if delta < timedelta(days=60):
+        if custom_date > today - timedelta(days=60):
             return "Land Preparation"
         else:
             if await check_predictions("Weeding"):
-                if delta < timedelta(days=3):
+                if custom_date > today - timedelta(days=3):
                     return "Weeding"
                 else:
                     if await check_predictions("Field Lay outing & Holing"):
-                        if delta < timedelta(days=3):
+                        if custom_date > today - timedelta(days=3):
                             return "Field Lay outing & Holing"
                         else:
                             if await check_predictions("Application of fertilizer"):
-                                if delta < timedelta(days=1):
+                                if custom_date > today - timedelta(days=1):
                                     return "Application of fertilizer"
                                 else:
                                     if await check_predictions("Transplanting of Seedlings"):
-                                        if delta < timedelta(days=3):
+                                        if custom_date > today - timedelta(days=3):
                                             return "Transplanting of Seedlings"
                                         
                                         else:
-                                            if delta < timedelta(days=730):
+                                            if custom_date > today - timedelta(days=730):
                                                 return True
                                             else:
                                                 return "Harvesting"
@@ -145,7 +148,7 @@ async def create_location(loc: Locations):
     filterQuery = locations.select().where(
             and_(
                 locations.c.locations == loc.locations
-            )
+            )   
         )
     if not await database.fetch_all(filterQuery):
         
@@ -191,7 +194,7 @@ async def recommend_activity(train: bool,id: int):
                 predictions.c.end == five_days_from_now_date
             )
         )
-        activity = await recommend_activity_checker(five_days_from_now)
+        activity = await recommend_activity_checker(False, five_days_from_now)
         if not await database.fetch_all(filterQuery):
             # print the result
             query = predictions.insert().values(
@@ -221,6 +224,8 @@ async def recommend_activity(train: bool,id: int):
 
 @router.post("/recommend-activity/custom/train={train}/id={id}")
 async def custom_recommend_activity(train: bool,id: int, payload: CustomDateprediction):
+    with engine.connect() as conn:
+            conn.execute(predictions.delete())
     query = locations.select().where(locations.c.id==id)
     link = await database.fetch_one(query)
     predict = Predict(train=link.is_trained, link=link.link, lat=link.lat, lng=link.lng)
@@ -247,7 +252,7 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
                 predictions.c.end == five_days_from_now_date
             )
         )
-        activity = await recommend_activity_checker(five_days_from_now)
+        activity = await recommend_activity_checker(True, five_days_from_now)
         if not await database.fetch_all(filterQuery):
             # print the result
             query = predictions.insert().values(
