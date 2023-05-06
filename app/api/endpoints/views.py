@@ -175,19 +175,27 @@ async def recommend_activity(train: bool,id: int):
     res = []
     past_forecast = openmeteo_datasets(lat=link.lat, lng=link.lng)
     forecast_5_days_ago = []
-
+    days = []
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
+
     for idx, x in enumerate(forecast_5_days_ago[-5:]):
         
         result = predict.predict_activiy(params=np.array([x]))
+        
+        if current_date.date()  not in days:
+            days.append(current_date.date())
         
         # get the date 5 days from the current date
         five_days_from_now = current_date + timedelta(days=idx + 1)
 
         # extract only the date portion
         five_days_from_now_date = five_days_from_now.date()
-        
+
+        if len(days) != 5:
+            days.append(five_days_from_now_date)
+    
+    for five_days_from_now_date in days:
         filterQuery = predictions.select().where(
             and_(
                 predictions.c.start == five_days_from_now_date,
@@ -233,19 +241,27 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
     res = []
     past_forecast = openmeteo_datasets(lat=link.lat, lng=link.lng)
     forecast_5_days_ago = []
+    days = []
 
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
     for idx, x in enumerate(forecast_5_days_ago[-5:]):
         
         result = predict.predict_activiy(params=np.array([x]))
-        
+
+        if current_date not in days:
+            days.append(current_date)
+
         # get the date 5 days from the current date
         five_days_from_now = current_date + timedelta(days=idx + 1)
 
         # extract only the date portion
         five_days_from_now_date = five_days_from_now
-        
+
+        if len(days) != 5:
+            days.append(five_days_from_now_date)
+    
+    for five_days_from_now_date in days:
         filterQuery = predictions.select().where(
             and_(
                 predictions.c.start == five_days_from_now_date,
