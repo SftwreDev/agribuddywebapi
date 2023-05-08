@@ -2,6 +2,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -71,7 +72,9 @@ class RegressionModel:
             # Evaluate the model
             prediction = clf.predict(x_test_poly)
             rmse = self.rmse_formula(prediction, y_test)
+            accuracy = r2_score(y_test, prediction)
 
+            print(f"Accuracy score: {accuracy:.2f}")
             print(f"RMSE : {rmse} | Regression Coefficient : {clf.coef_[1:]}")
 
             # Save the trained model

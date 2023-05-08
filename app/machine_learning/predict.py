@@ -1,5 +1,4 @@
 import numpy as np
-
 from machine_learning.regression import RegressionModel
 
 class Predict:
@@ -34,10 +33,8 @@ class Predict:
         return result
     
     def predict_activiy(self, params):
-        activity = {1: 'Acquisition of quality planting materials', 2: 'Land Preparation', 3: 'Field Lay outing', 
-         4: 'Holing/ Hole preparation', 5: 'Transplanting of Seedlings', 6: 'Mulching', 7: 'Fertilization', 
-         8: 'Water management', 9: 'Pruning', 10: 'Harvesting the cherries', 11: 'Processing the cherries', 
-         12: 'Drying the Beans', 13: 'Milling the Beans', 14: 'Exporting the Beans'}
+        activity = {1: 'Weed Removal', 2: 'Fertilizer application', 3: 'Pest Control', 
+         4: 'Water management'}
             
         regression_model = self.init_model()
         if self.train:
