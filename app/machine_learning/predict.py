@@ -13,6 +13,7 @@ class Predict:
         return RegressionModel(self.link, self.lat, self.lng)
     
     def predict_forecast(self, params):
+        # self.train = False
         regression_model = self.init_model()
         features = ['Temp Out', 'Out Hum', 'Dew Pt.', 'Wind Speed']
         result = []
@@ -33,6 +34,7 @@ class Predict:
         return result
     
     def predict_activiy(self, params):
+        # self.train = False
         activity = {1: 'Weed Removal', 2: 'Fertilizer application', 3: 'Pest Control', 
          4: 'Water management'}
             

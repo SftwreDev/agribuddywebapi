@@ -6,7 +6,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LogisticRegression
-
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from machine_learning.datasets import Datasets
 
@@ -72,9 +72,6 @@ class RegressionModel:
             # Evaluate the model
             prediction = clf.predict(x_test_poly)
             rmse = self.rmse_formula(prediction, y_test)
-            accuracy = r2_score(y_test, prediction)
-
-            print(f"Accuracy score: {accuracy:.2f}")
             print(f"RMSE : {rmse} | Regression Coefficient : {clf.coef_[1:]}")
 
             # Save the trained model
@@ -118,8 +115,21 @@ class RegressionModel:
         model = LogisticRegression(penalty='l1', dual=False, C=0.1, fit_intercept=True, solver='saga', 
                                 intercept_scaling=10.0, tol=1e-4, class_weight='balanced', max_iter=100, 
                                 multi_class='multinomial', warm_start=True, n_jobs=-1)
-        model.fit(X, y)
-        self.save_trained_model(name="farming_datasets", model=model)
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
+
+        print("Accuracy score:", accuracy)
+        print("Precision score: ", precision)
+        print("Recall score: {:.2f}".format(recall))
+        print("F1 score:", f1)
         return model
         
     def save_trained_model(self, name, model):

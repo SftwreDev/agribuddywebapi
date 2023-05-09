@@ -179,7 +179,7 @@ async def recommend_activity(train: bool,id: int):
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
 
-    for idx, x in enumerate(forecast_5_days_ago[-5:]):
+    for idx, x in enumerate(forecast_5_days_ago[-6:]):
         
         result = predict.predict_activiy(params=np.array([x]))
         
@@ -195,39 +195,30 @@ async def recommend_activity(train: bool,id: int):
         if len(days) != 5:
             days.append(five_days_from_now_date)
     
-    for five_days_from_now_date in days:
-        activity = await recommend_activity_checker(False, five_days_from_now)
-        
-            # print the result
-        if activity != "Recommend Activity":
+        for five_days_from_now_date in days:
             filterQuery = predictions.select().where(
                 and_(
-                    predictions.c.title == activity,
                     predictions.c.start == five_days_from_now_date,
                     predictions.c.end == five_days_from_now_date
                 )
             )
-            if not await database.fetch_all(filterQuery):
-                query = predictions.insert().values(
-                    title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
-                    temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
-                    )
-                await database.execute(query)
-        elif activity == "Recommend Activity":
-            filterQuery = predictions.select().where(
-                and_(
-                    predictions.c.title == result['title'],
-                    predictions.c.start == five_days_from_now_date,
-                    predictions.c.end == five_days_from_now_date
-                )
-            )
-            if not await database.fetch_all(filterQuery):
-                query = predictions.insert().values(
-                    title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
-                    temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
-                    )
-                await database.execute(query)
+            activity = await recommend_activity_checker(False, five_days_from_now)
 
+            if not await database.fetch_all(filterQuery):
+                if activity != "Recommend Activity":
+                # print the result
+                    query = predictions.insert().values(
+                        title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
+                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        )
+                    await database.execute(query)
+                elif activity == 'Recommend Activity' :
+                    query = predictions.insert().values(
+                        title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        )
+                    await database.execute(query)
+            
     selectQuery = predictions.select()
     fetchAll  = await database.fetch_all(selectQuery)
 
@@ -262,7 +253,7 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
 
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
-    for idx, x in enumerate(forecast_5_days_ago[-5:]):
+    for idx, x in enumerate(forecast_5_days_ago[-6:]):
         
         result = predict.predict_activiy(params=np.array([x]))
 
@@ -278,38 +269,30 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
         if len(days) != 5:
             days.append(five_days_from_now_date)
     
-    for five_days_from_now_date in days:
-        activity = await recommend_activity_checker(True, five_days_from_now)
+        for five_days_from_now_date in days:
+            filterQuery = predictions.select().where(
+                and_(
+                    predictions.c.start == five_days_from_now_date,
+                    predictions.c.end == five_days_from_now_date
+                )
+            )
+            activity = await recommend_activity_checker(True, five_days_from_now)
 
-        if activity != "Recommend Activity":
-            filterQuery = predictions.select().where(
-                and_(
-                    predictions.c.title == activity,
-                    predictions.c.start == five_days_from_now_date,
-                    predictions.c.end == five_days_from_now_date
-                )
-            )
             if not await database.fetch_all(filterQuery):
-                query = predictions.insert().values(
-                    title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
-                    temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
-                    )
-                await database.execute(query)
-        elif activity == "Recommend Activity":
-            filterQuery = predictions.select().where(
-                and_(
-                    predictions.c.title == result['title'],
-                    predictions.c.start == five_days_from_now_date,
-                    predictions.c.end == five_days_from_now_date
-                )
-            )
-            if not await database.fetch_all(filterQuery):
-                query = predictions.insert().values(
-                    title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
-                    temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
-                    )
-                await database.execute(query)
-    
+                # print the result
+                if activity != "Recommend Activity":
+                # print the result
+                    query = predictions.insert().values(
+                        title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
+                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        )
+                    await database.execute(query)
+                elif activity == 'Recommend Activity' :
+                    query = predictions.insert().values(
+                        title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
+                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        )
+                    await database.execute(query)
 
     selectQuery = predictions.select()
     fetchAll  = await database.fetch_all(selectQuery)
