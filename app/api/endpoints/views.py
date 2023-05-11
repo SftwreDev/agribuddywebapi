@@ -289,13 +289,13 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
                 # print the result
                     query = predictions.insert().values(
                         title=activity, start=five_days_from_now_date, end=five_days_from_now_date,
-                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        temperature="subject to weather conditions", out_hum="subject to weather conditions", dew_pt="subject to weather conditions", wind_speed="subject to weather conditions"
                         )
                     await database.execute(query)
                 elif activity == 'Recommend Activity' :
                     query = predictions.insert().values(
                         title=result['title'], start=five_days_from_now_date, end=five_days_from_now_date,
-                        temperature=str(round(result['temperature'])), out_hum=str(round(result['humidity'])), dew_pt=str(round(result['dew_pt'])), wind_speed=str(round(result['wind_speed']))
+                        temperature="subject to weather conditions", out_hum="subject to weather conditions", dew_pt="subject to weather conditions", wind_speed="subject to weather conditions"
                         )
                     await database.execute(query)
 
