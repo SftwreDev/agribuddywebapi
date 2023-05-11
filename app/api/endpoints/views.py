@@ -1,4 +1,5 @@
 import os
+import random
 import googlemaps
 import numpy as np
 from fastapi import APIRouter
@@ -250,10 +251,14 @@ async def custom_recommend_activity(train: bool,id: int, payload: CustomDatepred
     past_forecast = openmeteo_datasets(lat=link.lat, lng=link.lng)
     forecast_5_days_ago = []
     days = []
-
+    arr_data = []
+    for _ in range(5):
+        array = [random.randint(20, 35), random.randint(60, 80), random.randint(20, 30), random.randint(1, 10)]
+        arr_data.append(array)
+    print("DATA ", arr_data)
     for forecast in past_forecast:
         forecast_5_days_ago.append([forecast['Temp Out'], forecast['Out Hum'], forecast['Dew Pt.'], forecast['Wind Speed']])
-    for idx, x in enumerate(forecast_5_days_ago[-6:]):
+    for idx, x in enumerate(arr_data):
         
         result = predict.predict_activiy(params=np.array([x]))
 

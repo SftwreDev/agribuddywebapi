@@ -66,7 +66,7 @@ class RegressionModel:
             x_test_poly = poly_features.transform(x_test)
 
             # Fit a linear regression model to the polynomial features
-            clf = LinearRegression()
+            clf = LinearRegression(fit_intercept=True,copy_X=True, n_jobs=-1)
             clf.fit(x_train_poly, y_train)
 
             # Evaluate the model
